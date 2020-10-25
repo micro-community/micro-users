@@ -6,7 +6,7 @@ import (
 	"github.com/micro/micro/v3/service/config"
 	"github.com/micro/micro/v3/service/logger"
 
-	_ "github.com/micro-community/micro-chat/profile"
+	_ "github.com/micro-community/micro-users/profile"
 )
 
 func main() {

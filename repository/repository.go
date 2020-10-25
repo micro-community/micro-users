@@ -9,7 +9,7 @@ import (
 	"github.com/micro/micro/v3/service/store"
 )
 
-type pw struct {
+type passwd struct {
 	ID       string `json:"id"`
 	Password string `json:"password"`
 	Salt     string `json:"salt"`
@@ -36,16 +36,16 @@ func New() *Repos {
 	}
 }
 
-func (repo *Repos) CreateSession(sess *user.Session) error {
-	if sess.Created == 0 {
-		sess.Created = time.Now().Unix()
+func (repo *Repos) CreateSession(session *user.Session) error {
+	if session.Created == 0 {
+		session.Created = time.Now().Unix()
 	}
 
-	if sess.Expires == 0 {
-		sess.Expires = time.Now().Add(time.Hour * 24 * 7).Unix()
+	if session.Expires == 0 {
+		session.Expires = time.Now().Add(time.Hour * 24 * 7).Unix()
 	}
 
-	return repo.sessions.Save(sess)
+	return repo.sessions.Save(session)
 }
 
 func (repo *Repos) DeleteSession(id string) error {
@@ -53,9 +53,9 @@ func (repo *Repos) DeleteSession(id string) error {
 }
 
 func (repo *Repos) ReadSession(id string) (*user.Session, error) {
-	sess := &user.Session{}
+	session := &user.Session{}
 	// @todo there should be a Read in the model to get rid of this pattern
-	return sess, repo.sessions.Read(model.Equals("id", id), &sess)
+	return session, repo.sessions.Read(model.Equals("id", id), &session)
 }
 
 func (repo *Repos) Create(user *user.User, salt string, password string) error {
@@ -65,7 +65,7 @@ func (repo *Repos) Create(user *user.User, salt string, password string) error {
 	if err != nil {
 		return err
 	}
-	return repo.passwords.Save(pw{
+	return repo.passwords.Save(passwd{
 		ID:       user.Id,
 		Password: password,
 		Salt:     salt,
@@ -101,7 +101,7 @@ func (repo *Repos) Search(username, email string, limit, offset int64) ([]*user.
 }
 
 func (repo *Repos) UpdatePassword(id string, salt string, password string) error {
-	return repo.passwords.Save(pw{
+	return repo.passwords.Save(passwd{
 		ID:       id,
 		Password: password,
 		Salt:     salt,
@@ -127,7 +127,7 @@ func (repo *Repos) SaltAndPassword(username, email string) (string, string, erro
 	query = model.Equals("id", user.Id)
 	query.Order.Type = model.OrderTypeUnordered
 
-	password := &pw{}
+	password := &passwd{}
 	err = repo.passwords.Read(query, password)
 	if err != nil {
 		return "", "", err

@@ -68,6 +68,7 @@ func (s *Users) Read(ctx context.Context, req *pb.ReadRequest, rsp *pb.ReadRespo
 	return nil
 }
 
+//Update user information
 func (s *Users) Update(ctx context.Context, req *pb.UpdateRequest, rsp *pb.UpdateResponse) error {
 	req.User.Username = strings.ToLower(req.User.Username)
 	req.User.Email = strings.ToLower(req.User.Email)
