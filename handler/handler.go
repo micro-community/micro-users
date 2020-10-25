@@ -23,26 +23,29 @@ var (
 
 func random(i int) string {
 	bytes := make([]byte, i)
-	for {
-		rand.Read(bytes)
-		for i, b := range bytes {
-			bytes[i] = alphanum[b%byte(len(alphanum))]
-		}
-		return string(bytes)
+
+	fix := byte(len(alphanum))
+	rand.Read(bytes)
+	for i, b := range bytes {
+		bytes[i] = alphanum[b%fix]
 	}
-	return "ughwhy?!!!"
+	return string(bytes)
+	//return "ughwhy?!!!"
 }
 
+//Users handler
 type Users struct {
-	repo *repo.Table
+	repo *repo.Repos
 }
 
+//NewUsers Return users handler
 func NewUsers() *Users {
 	return &Users{
 		repo: repo.New(),
 	}
 }
 
+//Create user
 func (s *Users) Create(ctx context.Context, req *pb.CreateRequest, rsp *pb.CreateResponse) error {
 	salt := random(16)
 	h, err := bcrypt.GenerateFromPassword([]byte(x+salt+req.Password), 10)
@@ -125,7 +128,6 @@ func (s *Users) Login(ctx context.Context, req *pb.LoginRequest, rsp *pb.LoginRe
 	if err != nil {
 		return err
 	}
-
 	hh, err := base64.StdEncoding.DecodeString(hashed)
 	if err != nil {
 		return errors.InternalServerError("go.micro.srv.user.Login", err.Error())
@@ -135,17 +137,17 @@ func (s *Users) Login(ctx context.Context, req *pb.LoginRequest, rsp *pb.LoginRe
 		return errors.Unauthorized("go.micro.srv.user.login", err.Error())
 	}
 	// save session
-	sess := &pb.Session{
+	session := &pb.Session{
 		Id:       random(128),
 		Username: username,
 		Created:  time.Now().Unix(),
 		Expires:  time.Now().Add(time.Hour * 24 * 7).Unix(),
 	}
 
-	if err := s.repo.CreateSession(sess); err != nil {
+	if err := s.repo.CreateSession(session); err != nil {
 		return errors.InternalServerError("go.micro.srv.user.Login", err.Error())
 	}
-	rsp.Session = sess
+	rsp.Session = session
 	return nil
 }
 
@@ -154,10 +156,10 @@ func (s *Users) Logout(ctx context.Context, req *pb.LogoutRequest, rsp *pb.Logou
 }
 
 func (s *Users) ReadSession(ctx context.Context, req *pb.ReadSessionRequest, rsp *pb.ReadSessionResponse) error {
-	sess, err := s.repo.ReadSession(req.SessionId)
+	session, err := s.repo.ReadSession(req.SessionId)
 	if err != nil {
 		return err
 	}
-	rsp.Session = sess
+	rsp.Session = session
 	return nil
 }

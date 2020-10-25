@@ -55,6 +55,7 @@
         "rbac",
         "redigo",
         "rediscli",
+        "Repos",
         "resourceid",
         "roleid",
         "sqlite",

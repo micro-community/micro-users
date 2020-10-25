@@ -15,26 +15,28 @@ type pw struct {
 	Salt     string `json:"salt"`
 }
 
-type Table struct {
+//Repos hold tables
+type Repos struct {
 	users     model.Table
 	sessions  model.Table
 	passwords model.Table
 }
 
-func New() *Table {
+//New return a repo object
+func New() *Repos {
 	nameIndex := model.ByEquality("name")
 	nameIndex.Unique = true
 	emailIndex := model.ByEquality("email")
 	emailIndex.Unique = true
 
-	return &Table{
+	return &Repos{
 		users:     model.NewTable(store.DefaultStore, "users", model.Indexes(nameIndex, emailIndex), nil),
 		sessions:  model.NewTable(store.DefaultStore, "sessions", nil, nil),
 		passwords: model.NewTable(store.DefaultStore, "passwords", nil, nil),
 	}
 }
 
-func (table *Table) CreateSession(sess *user.Session) error {
+func (repo *Repos) CreateSession(sess *user.Session) error {
 	if sess.Created == 0 {
 		sess.Created = time.Now().Unix()
 	}
@@ -43,48 +45,48 @@ func (table *Table) CreateSession(sess *user.Session) error {
 		sess.Expires = time.Now().Add(time.Hour * 24 * 7).Unix()
 	}
 
-	return table.sessions.Save(sess)
+	return repo.sessions.Save(sess)
 }
 
-func (table *Table) DeleteSession(id string) error {
-	return table.sessions.Delete(model.Equals("id", id))
+func (repo *Repos) DeleteSession(id string) error {
+	return repo.sessions.Delete(model.Equals("id", id))
 }
 
-func (table *Table) ReadSession(id string) (*user.Session, error) {
+func (repo *Repos) ReadSession(id string) (*user.Session, error) {
 	sess := &user.Session{}
 	// @todo there should be a Read in the model to get rid of this pattern
-	return sess, table.sessions.Read(model.Equals("id", id), &sess)
+	return sess, repo.sessions.Read(model.Equals("id", id), &sess)
 }
 
-func (table *Table) Create(user *user.User, salt string, password string) error {
+func (repo *Repos) Create(user *user.User, salt string, password string) error {
 	user.Created = time.Now().Unix()
 	user.Updated = time.Now().Unix()
-	err := table.users.Save(user)
+	err := repo.users.Save(user)
 	if err != nil {
 		return err
 	}
-	return table.passwords.Save(pw{
+	return repo.passwords.Save(pw{
 		ID:       user.Id,
 		Password: password,
 		Salt:     salt,
 	})
 }
 
-func (table *Table) Delete(id string) error {
-	return table.users.Delete(model.Equals("id", id))
+func (repo *Repos) Delete(id string) error {
+	return repo.users.Delete(model.Equals("id", id))
 }
 
-func (table *Table) Update(user *user.User) error {
+func (repo *Repos) Update(user *user.User) error {
 	user.Updated = time.Now().Unix()
-	return table.users.Save(user)
+	return repo.users.Save(user)
 }
 
-func (table *Table) Read(id string) (*user.User, error) {
+func (repo *Repos) Read(id string) (*user.User, error) {
 	user := &user.User{}
-	return user, table.users.Read(model.Equals("id", id), user)
+	return user, repo.users.Read(model.Equals("id", id), user)
 }
 
-func (table *Table) Search(username, email string, limit, offset int64) ([]*user.User, error) {
+func (repo *Repos) Search(username, email string, limit, offset int64) ([]*user.User, error) {
 	var query model.Query
 	if len(username) > 0 {
 		query = model.Equals("name", username)
@@ -95,18 +97,18 @@ func (table *Table) Search(username, email string, limit, offset int64) ([]*user
 	}
 
 	users := []*user.User{}
-	return users, table.users.List(query, &users)
+	return users, repo.users.List(query, &users)
 }
 
-func (table *Table) UpdatePassword(id string, salt string, password string) error {
-	return table.passwords.Save(pw{
+func (repo *Repos) UpdatePassword(id string, salt string, password string) error {
+	return repo.passwords.Save(pw{
 		ID:       id,
 		Password: password,
 		Salt:     salt,
 	})
 }
 
-func (table *Table) SaltAndPassword(username, email string) (string, string, error) {
+func (repo *Repos) SaltAndPassword(username, email string) (string, string, error) {
 	var query model.Query
 	if len(username) > 0 {
 		query = model.Equals("name", username)
@@ -117,7 +119,7 @@ func (table *Table) SaltAndPassword(username, email string) (string, string, err
 	}
 
 	user := &user.User{}
-	err := table.users.Read(query, &user)
+	err := repo.users.Read(query, &user)
 	if err != nil {
 		return "", "", err
 	}
@@ -126,7 +128,7 @@ func (table *Table) SaltAndPassword(username, email string) (string, string, err
 	query.Order.Type = model.OrderTypeUnordered
 
 	password := &pw{}
-	err = table.passwords.Read(query, password)
+	err = repo.passwords.Read(query, password)
 	if err != nil {
 		return "", "", err
 	}
