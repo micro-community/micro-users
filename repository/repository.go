@@ -30,30 +30,7 @@ func New() *Repos {
 	}
 }
 
-//CreateSession for user
-func (repo *Repos) CreateSession(session *user.Session) error {
-	if session.Created == 0 {
-		session.Created = time.Now().Unix()
-	}
-
-	if session.Expires == 0 {
-		session.Expires = time.Now().Add(time.Hour * 24 * 7).Unix()
-	}
-
-	return repo.sessions.Save(session)
-}
-
-//DeleteSession of user
-func (repo *Repos) DeleteSession(id string) error {
-	return repo.sessions.Delete(model.Equals("id", id))
-}
-
-func (repo *Repos) ReadSession(id string) (*user.Session, error) {
-	session := &user.Session{}
-	// @todo there should be a Read in the model to get rid of this pattern
-	return session, repo.sessions.Read(model.Equals("id", id), &session)
-}
-
+//Create a user,and save its password
 func (repo *Repos) Create(user *user.User, salt string, password string) error {
 	user.Created = time.Now().Unix()
 	user.Updated = time.Now().Unix()
@@ -68,10 +45,12 @@ func (repo *Repos) Create(user *user.User, salt string, password string) error {
 	})
 }
 
+//Delete a user by id
 func (repo *Repos) Delete(id string) error {
 	return repo.users.Delete(model.Equals("id", id))
 }
 
+//Update a user by model
 func (repo *Repos) Update(user *user.User) error {
 	user.Updated = time.Now().Unix()
 	return repo.users.Save(user)
@@ -82,6 +61,7 @@ func (repo *Repos) Read(id string) (*user.User, error) {
 	return user, repo.users.Read(model.Equals("id", id), user)
 }
 
+//Search user
 func (repo *Repos) Search(username, email string, limit, offset int64) ([]*user.User, error) {
 	var query model.Query
 	if len(username) > 0 {
@@ -94,39 +74,4 @@ func (repo *Repos) Search(username, email string, limit, offset int64) ([]*user.
 
 	users := []*user.User{}
 	return users, repo.users.List(query, &users)
-}
-
-func (repo *Repos) UpdatePassword(id string, salt string, password string) error {
-	return repo.passwords.Save(passwd{
-		ID:       id,
-		Password: password,
-		Salt:     salt,
-	})
-}
-
-func (repo *Repos) SaltAndPassword(username, email string) (string, string, error) {
-	var query model.Query
-	if len(username) > 0 {
-		query = model.Equals("name", username)
-	} else if len(email) > 0 {
-		query = model.Equals("email", email)
-	} else {
-		return "", "", errors.New("username and email cannot be blank")
-	}
-
-	user := &user.User{}
-	err := repo.users.Read(query, &user)
-	if err != nil {
-		return "", "", err
-	}
-
-	query = model.Equals("id", user.Id)
-	query.Order.Type = model.OrderTypeUnordered
-
-	password := &passwd{}
-	err = repo.passwords.Read(query, password)
-	if err != nil {
-		return "", "", err
-	}
-	return password.Salt, password.Password, nil
 }

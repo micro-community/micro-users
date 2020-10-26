@@ -13,24 +13,13 @@ import (
 )
 
 const (
-	x = "micro-starter"
+	x           = "micro-starter"
+	defaultCost = 10
 )
 
 var (
 	alphanum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 )
-
-func random(i int) string {
-	bytes := make([]byte, i)
-
-	fix := byte(len(alphanum))
-	rand.Read(bytes)
-	for i, b := range bytes {
-		bytes[i] = alphanum[b%fix]
-	}
-	return string(bytes)
-	//return "ughwhy?!!!"
-}
 
 //Users handler
 type Users struct {
@@ -47,7 +36,7 @@ func NewUsers() *Users {
 //Create a user
 func (s *Users) Create(ctx context.Context, req *pb.CreateRequest, rsp *pb.CreateResponse) error {
 	salt := random(16)
-	h, err := bcrypt.GenerateFromPassword([]byte(x+salt+req.Password), 10)
+	h, err := bcrypt.GenerateFromPassword([]byte(x+salt+req.Password), defaultCost)
 	if err != nil {
 		return errors.InternalServerError("micro-community.srv.user.Create", err.Error())
 	}
@@ -58,7 +47,7 @@ func (s *Users) Create(ctx context.Context, req *pb.CreateRequest, rsp *pb.Creat
 	return s.repo.Create(req.User, salt, pp)
 }
 
-//Read s User
+//Read a User info from repo
 func (s *Users) Read(ctx context.Context, req *pb.ReadRequest, rsp *pb.ReadResponse) error {
 	user, err := s.repo.Read(req.Id)
 	if err != nil {
@@ -88,4 +77,16 @@ func (s *Users) Search(ctx context.Context, req *pb.SearchRequest, rsp *pb.Searc
 	}
 	rsp.Users = users
 	return nil
+}
+
+func random(i int) string {
+	bytes := make([]byte, i)
+
+	fix := byte(len(alphanum))
+	rand.Read(bytes)
+	for i, b := range bytes {
+		bytes[i] = alphanum[b%fix]
+	}
+	return string(bytes)
+	//return "ughwhy?!!!"
 }
