@@ -30,14 +30,14 @@ func (s *Users) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordReques
 		return errors.Unauthorized("micro-community.srv.user.updatepassword", err.Error())
 	}
 
-	salt = random(16)
-	h, err := bcrypt.GenerateFromPassword([]byte(x+salt+req.NewPassword), 10)
+	salt = random(16) //use different salt
+	h, err := bcrypt.GenerateFromPassword([]byte(x+salt+req.NewPassword), defaultCost)
 	if err != nil {
 		return errors.InternalServerError("micro-community.srv.user.updatepassword", err.Error())
 	}
-	pp := base64.StdEncoding.EncodeToString(h)
+	encodedPassword := base64.StdEncoding.EncodeToString(h)
 
-	if err := s.repo.UpdatePassword(req.UserId, salt, pp); err != nil {
+	if err := s.repo.UpdatePassword(req.UserId, salt, encodedPassword); err != nil {
 		return errors.InternalServerError("micro-community.srv.user.updatepassword", err.Error())
 	}
 	return nil
