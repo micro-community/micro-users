@@ -9,12 +9,6 @@ import (
 	"github.com/micro/micro/v3/service/store"
 )
 
-type passwd struct {
-	ID       string `json:"id"`
-	Password string `json:"password"`
-	Salt     string `json:"salt"`
-}
-
 //Repos hold tables
 type Repos struct {
 	users     model.Table
@@ -36,6 +30,7 @@ func New() *Repos {
 	}
 }
 
+//CreateSession for user
 func (repo *Repos) CreateSession(session *user.Session) error {
 	if session.Created == 0 {
 		session.Created = time.Now().Unix()
@@ -48,6 +43,7 @@ func (repo *Repos) CreateSession(session *user.Session) error {
 	return repo.sessions.Save(session)
 }
 
+//DeleteSession of user
 func (repo *Repos) DeleteSession(id string) error {
 	return repo.sessions.Delete(model.Equals("id", id))
 }
