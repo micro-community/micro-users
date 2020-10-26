@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/golang/protobuf v1.4.3
+	github.com/google/uuid v1.1.2
 	github.com/micro/dev v0.0.0-20201023140212-49030ae8a31f
 	github.com/micro/micro/v3 v3.0.0-beta.7
 	github.com/urfave/cli/v2 v2.2.0

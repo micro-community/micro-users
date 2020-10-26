@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	pb "github.com/micro-community/micro-users/proto"
 	"github.com/micro/micro/v3/service/errors"
 	"golang.org/x/crypto/bcrypt"
@@ -30,7 +31,7 @@ func (s *Users) Login(ctx context.Context, req *pb.LoginRequest, rsp *pb.LoginRe
 	}
 	// save session
 	session := &pb.Session{
-		Id:       random(128),
+		Id:       uuid.New().String(),
 		Username: username,
 		Created:  time.Now().Unix(),
 		Expires:  time.Now().Add(time.Hour * 24 * 7).Unix(),
