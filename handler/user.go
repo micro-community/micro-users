@@ -34,22 +34,28 @@ func NewUsers() *Users {
 }
 
 //Create a user
-func (s *Users) Create(ctx context.Context, req *pb.CreateRequest, rsp *pb.CreateResponse) error {
+func (u *Users) Create(ctx context.Context, req *pb.CreateRequest, rsp *pb.CreateResponse) error {
+
+	if len(req.Password) < 8 {
+		return errors.InternalServerError("users.Create.Check", "Password is less than 8 characters")
+	}
 	salt := random(16)
 	h, err := bcrypt.GenerateFromPassword([]byte(x+salt+req.Password), defaultCost)
 	if err != nil {
-		return errors.InternalServerError("micro-community.srv.user.Create", err.Error())
+		return errors.InternalServerError("user.Create", err.Error())
 	}
 	pp := base64.StdEncoding.EncodeToString(h)
 
-	req.User.Username = strings.ToLower(req.User.Username)
-	req.User.Email = strings.ToLower(req.User.Email)
-	return s.repo.Create(req.User, salt, pp)
+	return u.repo.Create(&pb.User{
+		Id:       req.Id,
+		Username: strings.ToLower(req.Username),
+		Email:    strings.ToLower(req.Email),
+	}, salt, pp)
 }
 
 //Read a User info from repo
-func (s *Users) Read(ctx context.Context, req *pb.ReadRequest, rsp *pb.ReadResponse) error {
-	user, err := s.repo.Read(req.Id)
+func (u *Users) Read(ctx context.Context, req *pb.ReadRequest, rsp *pb.ReadResponse) error {
+	user, err := u.repo.Read(req.Id)
 	if err != nil {
 		return err
 	}
@@ -58,20 +64,22 @@ func (s *Users) Read(ctx context.Context, req *pb.ReadRequest, rsp *pb.ReadRespo
 }
 
 //Update user information
-func (s *Users) Update(ctx context.Context, req *pb.UpdateRequest, rsp *pb.UpdateResponse) error {
-	req.User.Username = strings.ToLower(req.User.Username)
-	req.User.Email = strings.ToLower(req.User.Email)
-	return s.repo.Update(req.User)
+func (u *Users) Update(ctx context.Context, req *pb.UpdateRequest, rsp *pb.UpdateResponse) error {
+	return u.repo.Update(&pb.User{
+		Id:       req.Id,
+		Username: strings.ToLower(req.Username),
+		Email:    strings.ToLower(req.Email),
+	})
 }
 
 //Delete user information
-func (s *Users) Delete(ctx context.Context, req *pb.DeleteRequest, rsp *pb.DeleteResponse) error {
-	return s.repo.Delete(req.Id)
+func (u *Users) Delete(ctx context.Context, req *pb.DeleteRequest, rsp *pb.DeleteResponse) error {
+	return u.repo.Delete(req.Id)
 }
 
 //Search user information
-func (s *Users) Search(ctx context.Context, req *pb.SearchRequest, rsp *pb.SearchResponse) error {
-	users, err := s.repo.Search(req.Username, req.Email, req.Limit, req.Offset)
+func (u *Users) Search(ctx context.Context, req *pb.SearchRequest, rsp *pb.SearchResponse) error {
+	users, err := u.repo.Search(req.Username, req.Email, req.Limit, req.Offset)
 	if err != nil {
 		return err
 	}
@@ -83,10 +91,9 @@ func random(i int) string {
 	bytes := make([]byte, i)
 
 	fix := byte(len(alphanum))
-	rand.Read(bytes)
+	_, _ = rand.Read(bytes)
 	for i, b := range bytes {
 		bytes[i] = alphanum[b%fix]
 	}
 	return string(bytes)
-	//return "ughwhy?!!!"
 }

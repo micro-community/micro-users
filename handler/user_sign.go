@@ -23,22 +23,23 @@ func (s *Users) Login(ctx context.Context, req *pb.LoginRequest, rsp *pb.LoginRe
 	}
 	hh, err := base64.StdEncoding.DecodeString(hashed)
 	if err != nil {
-		return errors.InternalServerError("micro-community.srv.user.Login", err.Error())
+		return errors.InternalServerError("user.Login", err.Error())
 	}
 
 	if err := bcrypt.CompareHashAndPassword(hh, []byte(x+salt+req.Password)); err != nil {
-		return errors.Unauthorized("micro-community.srv.user.login", err.Error())
+		return errors.Unauthorized("user.login", err.Error())
 	}
 	// save session
 	session := &pb.Session{
 		Id:       uuid.New().String(),
+		Email:    email,
 		Username: username,
 		Created:  time.Now().Unix(),
 		Expires:  time.Now().Add(time.Hour * 24 * 7).Unix(),
 	}
 
 	if err := s.repo.CreateSession(session); err != nil {
-		return errors.InternalServerError("micro-community.srv.user.Login", err.Error())
+		return errors.InternalServerError("user.Login", err.Error())
 	}
 	rsp.Session = session
 	return nil

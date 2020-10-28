@@ -13,32 +13,36 @@ import (
 func (s *Users) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordRequest, rsp *pb.UpdatePasswordResponse) error {
 	usr, err := s.repo.Read(req.UserId)
 	if err != nil {
-		return errors.InternalServerError("micro-community.srv.user.updatepassword", err.Error())
+		return errors.InternalServerError("user.updatepassword", err.Error())
+	}
+
+	if req.NewPassword != req.ConfirmPassword {
+		return errors.InternalServerError("users.updatepassword", "Passwords don't math")
 	}
 
 	salt, hashed, err := s.repo.SaltAndPassword(usr.Username, usr.Email)
 	if err != nil {
-		return errors.InternalServerError("micro-community.srv.user.updatepassword", err.Error())
+		return errors.InternalServerError("user.updatepassword", err.Error())
 	}
 
 	hh, err := base64.StdEncoding.DecodeString(hashed)
 	if err != nil {
-		return errors.InternalServerError("micro-community.srv.user.updatepassword", err.Error())
+		return errors.InternalServerError("user.updatepassword", err.Error())
 	}
 
 	if err := bcrypt.CompareHashAndPassword(hh, []byte(x+salt+req.OldPassword)); err != nil {
-		return errors.Unauthorized("micro-community.srv.user.updatepassword", err.Error())
+		return errors.Unauthorized("user.updatepassword", err.Error())
 	}
 
 	salt = random(16) //use different salt
 	h, err := bcrypt.GenerateFromPassword([]byte(x+salt+req.NewPassword), defaultCost)
 	if err != nil {
-		return errors.InternalServerError("micro-community.srv.user.updatepassword", err.Error())
+		return errors.InternalServerError("user.updatepassword", err.Error())
 	}
 	encodedPassword := base64.StdEncoding.EncodeToString(h)
 
 	if err := s.repo.UpdatePassword(req.UserId, salt, encodedPassword); err != nil {
-		return errors.InternalServerError("micro-community.srv.user.updatepassword", err.Error())
+		return errors.InternalServerError("user.updatepassword", err.Error())
 	}
 	return nil
 }

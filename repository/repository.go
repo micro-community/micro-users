@@ -14,19 +14,32 @@ type Repos struct {
 	users     model.Table
 	sessions  model.Table
 	passwords model.Table
+
+	nameIndex  model.Index
+	emailIndex model.Index
+	idIndex    model.Index
 }
 
 //New return a repo object
 func New() *Repos {
-	nameIndex := model.ByEquality("name")
+	nameIndex := model.ByEquality("username")
 	nameIndex.Unique = true
+	nameIndex.Order.Type = model.OrderTypeUnordered
+
 	emailIndex := model.ByEquality("email")
 	emailIndex.Unique = true
+	emailIndex.Order.Type = model.OrderTypeUnordered
+
+	idIndex := model.ByEquality("id")
+	idIndex.Order.Type = model.OrderTypeUnordered
 
 	return &Repos{
-		users:     model.NewTable(store.DefaultStore, "users", model.Indexes(nameIndex, emailIndex), nil),
-		sessions:  model.NewTable(store.DefaultStore, "sessions", nil, nil),
-		passwords: model.NewTable(store.DefaultStore, "passwords", nil, nil),
+		users:      model.NewTable(store.DefaultStore, "users", model.Indexes(nameIndex, emailIndex), nil),
+		sessions:   model.NewTable(store.DefaultStore, "sessions", nil, nil),
+		passwords:  model.NewTable(store.DefaultStore, "passwords", nil, nil),
+		nameIndex:  nameIndex,
+		emailIndex: emailIndex,
+		idIndex:    idIndex,
 	}
 }
 
